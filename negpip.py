@@ -35,9 +35,9 @@ class Negpip:
 
         return new_model, new_clip
 
-# prompt weightingの計算で無理やりk,vを計算
-# k,vはattn2_patchで分離する
-# weightがマイナスのときはvだけマイナスにする
+# Forcibly calculate k and v using prompt weighting calculation
+# k,v are separated by attn2_patch
+# When weight is negative, only v is negative.
 def hook_clip_encode_token_weights(self):
     def encode_token_weights(token_weight_pairs):
         to_encode = list(self.empty_tokens)
