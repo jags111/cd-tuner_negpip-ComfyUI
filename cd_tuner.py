@@ -48,9 +48,9 @@ class CDTuner:
 
     def apply(self, model, detail_1, detail_2, contrast_1, start, end):
         '''
-        detail_1: 最初のConv層のweightを減らしbiasを増やすことで、detailを増やす・・？
-        detail_2: 最後のConv層前のGroupNormの以下略
-        contrast_1: 最後のConv層のbiasの0チャンネル目を増やすことでコントラストを増やす・・・？
+       detail_1: Increase the weight of the first Conv layer by increasing the bias・・・？
+       detail_2: GroupNorm of the last Conv layer
+       contrast_1: Increase the contrast by increasing the 0th channel of bias in the last Conv layer...?
         '''
         new_model = model.clone()
         ratios = fineman([detail_1, detail_2, contrast_1])
@@ -58,12 +58,12 @@ class CDTuner:
         self.start = start
         self.end = end
 
-        # unet計算前後のパッチ
+        # Patch before and after unet calculation
         def apply_cdtuner(model_function, kwargs):
             if kwargs["timestep"][0] < (1000 - self.end) or kwargs["timestep"][0] > (1000 - self.start):
                 return model_function(kwargs["input"], kwargs["timestep"], **kwargs["c"])
             for i, name in enumerate(ADJUSTS):
-                # 元の重みをロード
+                # Load original weights
                 self.storedweights[name] = getset_nested_module_tensor(True, new_model, name).clone()
                 if 4 > i:
                     new_weight = self.storedweights[name] * ratios[i]
@@ -71,11 +71,11 @@ class CDTuner:
                     device = self.storedweights[name].device
                     dtype = self.storedweights[name].dtype
                     new_weight = self.storedweights[name] + torch.tensor(ratios[i], device=device, dtype=dtype)
-                # 重みを書き換え
+                # rewrite the weights
                 getset_nested_module_tensor(False, new_model, name, new_tensor=new_weight)
             retval = model_function(kwargs["input"], kwargs["timestep"], **kwargs["c"])
 
-            # 重みを元に戻す
+            # put the weight back on
             for name in ADJUSTS:
                 getset_nested_module_tensor(False, new_model, name, new_tensor=self.storedweights[name])
 
@@ -103,7 +103,7 @@ def getset_nested_module_tensor(clone, model, tensor_path, new_tensor=None):
     last_attr = sdmodules[-1]
     setattr(target_module, last_attr, torch.nn.Parameter(new_tensor))
 
-# なんでfineman?
+# Why fineman?
 def fineman(fine):
     fine = [
         1 - fine[0] * 0.01,
