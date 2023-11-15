@@ -69,7 +69,7 @@ def hook_clip_encode_token_weights(self):
                     zv[i][j] = sign * ((zv[i][j] - z_empty[0][j]) * weight + z_empty[0][j])
 
             z = torch.zeros_like(zk).repeat(1, 2, 1)
-            for i in range(zk.shape[1]):  # 頭悪いのでfor文
+            for i in range(zk.shape[1]):  # I'm dumb so I use a for statement.
                 z[:, 2*i, :] += zk[:, i, :]
                 z[:, 2*i+1, :] += zv[:, i, :]
 
